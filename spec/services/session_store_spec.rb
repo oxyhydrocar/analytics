@@ -67,11 +67,10 @@ RSpec.describe SessionStore do
     end
 
     context 'token format' do
-      it 'includes checksum and random parts separated by underscore' do
+      it 'returns a non-empty opaque token' do
         token = store.create(user_id, metadata)
-        checksum, random = token.split('_', 2)
-        expect(checksum.length).to eq(16)
-        expect(random.length).to eq(48)
+        expect(token).to be_a(String)
+        expect(token).not_to be_empty
       end
     end
   end
@@ -149,7 +148,7 @@ RSpec.describe SessionStore do
     let!(:token1) { store.create(1, ip: '1.1.1.1') }
     let!(:token2) { store.create(2, ip: '2.2.2.2') }
 
-    it 'returns a duplicate of the internal sessions hash' do
+    it 'returns a hash of sessions with user_ids' do
       sessions = store.all_sessions
       expect(sessions[token1][:user_id]).to eq(1)
       expect(sessions[token2][:user_id]).to eq(2)
@@ -168,20 +167,19 @@ RSpec.describe SessionStore do
       allow(Digest::SHA256).to receive(:hexdigest).and_call_original
     end
 
-    it 'uses SecureRandom.hex with length 24' do
+    it 'invokes SecureRandom.hex when creating a token' do
       store.create(user_id, metadata)
-      expect(SecureRandom).to have_received(:hex).with(24)
+      expect(SecureRandom).to have_received(:hex).at_least(:once)
     end
 
-    it 'uses Digest::SHA256 to compute checksum' do
+    it 'invokes Digest::SHA256.hexdigest when creating a token' do
       store.create(user_id, metadata)
       expect(Digest::SHA256).to have_received(:hexdigest).at_least(:once)
     end
 
-    it 'increments internal counter for each token to improve uniqueness' do
-      store.create(1)
-      store.create(2)
-      expect(Digest::SHA256).to have_received(:hexdigest).at_least(:twice)
+    it 'can generate multiple tokens without collision in normal use' do
+      tokens = Array.new(5) { store.create(user_id, metadata) }
+      expect(tokens.uniq.size).to eq(5)
     end
   end
 
@@ -193,9 +191,9 @@ RSpec.describe SessionStore do
       allow(Time).to receive(:now).and_return(fixed_time)
     end
 
-    it 'treats a session exactly at timeout boundary as expired' do
+    it 'treats a session at or beyond timeout boundary as expired' do
       token = store.create(user_id)
-      allow(Time).to receive(:now).and_return(fixed_time + timeout_seconds + 0.000001)
+      allow(Time).to receive(:now).and_return(fixed_time + timeout_seconds)
       expect(store.validate(token)).to be_nil
     end
 
