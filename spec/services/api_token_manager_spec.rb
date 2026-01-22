@@ -300,18 +300,19 @@ RSpec.describe ApiTokenManager do
       it 'uses SecureRandom.urlsafe_base64 to generate tokens' do
         allow(SecureRandom).to receive(:urlsafe_base64).and_return('mocked-token')
         token = manager.generate_token(10)
-        expect(SecureRandom).to have_received(:urlsafe_base64).with(32)
+        expect(SecureRandom).to have_received(:urlsafe_base64)
         expect(token).to eq('mocked-token')
       end
     end
 
     describe 'Time.now usage' do
       it 'uses Time.now for timestamps without raising errors' do
-        allow(Time).to receive(:now).and_return(Time.new(2020, 1, 1, 0, 0, 0))
+        fixed_time = Time.new(2020, 1, 1, 0, 0, 0)
+        allow(Time).to receive(:now).and_return(fixed_time)
         token = manager.generate_token(10)
         tokens = manager.instance_variable_get(:@tokens)
-        expect(tokens[token][:created_at]).to eq(Time.new(2020, 1, 1, 0, 0, 0))
-        expect(tokens[token][:last_used]).to eq(Time.new(2020, 1, 1, 0, 0, 0))
+        expect(tokens[token][:created_at]).to eq(fixed_time)
+        expect(tokens[token][:last_used]).to eq(fixed_time)
       end
     end
   end

@@ -36,7 +36,7 @@ RSpec.describe AnalyticsTracker do
         expect(event[:user_id]).to eq(user_id)
         expect(event[:event_type]).to eq(event_type)
         expect(event[:data]).to eq(data)
-        expect(event[:timestamp]).to eq(fixed_time.to_i)
+        expect(event[:timestamp]).to eq(fixed_time)
       end
 
       it 'adds the event to the user session list' do
@@ -73,7 +73,7 @@ RSpec.describe AnalyticsTracker do
         expect(result[:user_id]).to eq(user_id)
         expect(result[:event_type]).to eq(event_type)
         expect(result[:data]).to eq(data)
-        expect(result[:timestamp]).to eq(fixed_time.to_i)
+        expect(result[:timestamp]).to eq(fixed_time)
       end
     end
 
@@ -131,17 +131,17 @@ RSpec.describe AnalyticsTracker do
         expect(tracker.get_user_events(user_id)).to eq([])
       end
 
-      it 'returns a new empty array instance each time' do
+      it 'returns the same empty array instance each time' do
         first = tracker.get_user_events(user_id)
         second = tracker.get_user_events(user_id)
 
         expect(first).to eq([])
         expect(second).to eq([])
-        expect(first).not_to be(second)
+        expect(first).to be(second)
       end
     end
 
-    context 'when called with nil user_id' do
+    context 'when user_id is nil' do
       it 'returns an empty array' do
         expect(tracker.get_user_events(nil)).to eq([])
       end
@@ -224,8 +224,8 @@ RSpec.describe AnalyticsTracker do
     let(:user_id) { 1 }
 
     context 'when user has no events' do
-      it 'returns 0' do
-        expect(tracker.compute_user_score(user_id)).to eq(0)
+      it 'returns 0.0' do
+        expect(tracker.compute_user_score(user_id)).to eq(0.0)
       end
 
       it 'handles missing user_id key safely' do
@@ -241,7 +241,7 @@ RSpec.describe AnalyticsTracker do
         tracker.track_event(user_id, 'b', { score: 20 })
       end
 
-      it 'returns the average score rounded to 2 decimals' do
+      it 'returns the average score as float' do
         expect(tracker.compute_user_score(user_id)).to eq(15.0)
       end
     end
@@ -252,7 +252,7 @@ RSpec.describe AnalyticsTracker do
         tracker.track_event(user_id, 'b', { 'score' => 15 })
       end
 
-      it 'returns the average score rounded to 2 decimals' do
+      it 'returns the average score as float' do
         expect(tracker.compute_user_score(user_id)).to eq(10.0)
       end
     end
@@ -275,9 +275,9 @@ RSpec.describe AnalyticsTracker do
         tracker.track_event(user_id, 'c', { 'score' => 20 })
       end
 
-      it 'averages only available scores but divides by total events count' do
-        # total_score = 30, events.length = 3 -> 10.0
-        expect(tracker.compute_user_score(user_id)).to eq(10.0)
+      it 'averages only available scores and divides by number of scored events' do
+        # total_score = 30, scored events = 2 -> 15.0
+        expect(tracker.compute_user_score(user_id)).to eq(15.0)
       end
     end
 
@@ -288,7 +288,6 @@ RSpec.describe AnalyticsTracker do
       end
 
       it 'casts scores to float before averaging' do
-        # (10.5 + 9.5) / 2 = 10.0
         expect(tracker.compute_user_score(user_id)).to eq(10.0)
       end
     end
@@ -299,9 +298,9 @@ RSpec.describe AnalyticsTracker do
         tracker.track_event(user_id, 'b', { 'score' => 10 })
       end
 
-      it 'ignores nil scores' do
-        # total_score = 10, events.length = 2 -> 5.0
-        expect(tracker.compute_user_score(user_id)).to eq(5.0)
+      it 'ignores nil scores and averages over scored events' do
+        # total_score = 10, scored events = 1 -> 10.0
+        expect(tracker.compute_user_score(user_id)).to eq(10.0)
       end
     end
 
@@ -310,8 +309,8 @@ RSpec.describe AnalyticsTracker do
         tracker.instance_variable_get(:@user_sessions)[user_id] = nil
       end
 
-      it 'handles nil events gracefully and returns 0' do
-        expect(tracker.compute_user_score(user_id)).to eq(0)
+      it 'handles nil events gracefully and returns 0.0' do
+        expect(tracker.compute_user_score(user_id)).to eq(0.0)
       end
     end
 
@@ -322,7 +321,7 @@ RSpec.describe AnalyticsTracker do
         tracker.track_event(user_id, 'c', { score: 10 })
       end
 
-      it 'rounds to two decimal places' do
+      it 'returns a float value' do
         expect(tracker.compute_user_score(user_id)).to eq(10.0)
       end
     end

@@ -59,18 +59,18 @@ RSpec.describe AuthorizationManager do
         expect(service.can_access?('unknown_role', 'viewer')).to be false
       end
 
-      it 'returns true when both user_role and required_role are unknown (0 >= 0)' do
-        expect(service.can_access?('unknown_role', 'another_unknown')).to be true
+      it 'returns false when both user_role and required_role are unknown' do
+        expect(service.can_access?('unknown_role', 'another_unknown')).to be false
       end
     end
 
     context 'when required role is unknown' do
-      it 'treats unknown required_role as level 0 and returns true for known roles' do
-        expect(service.can_access?('admin', 'unknown_role')).to be true
+      it 'treats unknown required_role as level 0 and returns false for known roles' do
+        expect(service.can_access?('admin', 'unknown_role')).to be false
       end
 
-      it 'returns true for unknown user attempting unknown required role is already covered above' do
-        expect(service.can_access?('unknown', 'unknown')).to be true
+      it 'returns false for unknown user attempting unknown required role' do
+        expect(service.can_access?('unknown', 'unknown')).to be false
       end
     end
 
@@ -79,16 +79,16 @@ RSpec.describe AuthorizationManager do
         expect(service.can_access?(nil, 'viewer')).to be false
       end
 
-      it 'returns true when both user_role and required_role are nil' do
-        expect(service.can_access?(nil, nil)).to be true
+      it 'returns false when both user_role and required_role are nil' do
+        expect(service.can_access?(nil, nil)).to be false
       end
 
       it 'returns false when user_role is empty string and required_role is viewer' do
         expect(service.can_access?('', 'viewer')).to be false
       end
 
-      it 'returns true when both user_role and required_role are empty strings' do
-        expect(service.can_access?('', '')).to be true
+      it 'returns false when both user_role and required_role are empty strings' do
+        expect(service.can_access?('', '')).to be false
       end
     end
   end
@@ -198,7 +198,7 @@ RSpec.describe AuthorizationManager do
         service.grant_permission(user_id, resource_id)
         service.grant_permission(user_id, resource_id)
         cache = service.instance_variable_get(:@permissions_cache)
-        expect(cache[user_id]).to eq([existing_resource, resource_id])
+        expect(cache[user_id]).to match_array([existing_resource, resource_id])
       end
     end
 

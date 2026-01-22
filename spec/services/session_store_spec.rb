@@ -16,9 +16,9 @@ RSpec.describe SessionStore do
 
     it 'uses the provided timeout' do
       short_store = described_class.new(timeout_seconds: 1)
-      token = short_store.create(user_id)
       created_at = Time.now
       allow(Time).to receive(:now).and_return(created_at, created_at + 2)
+      token = short_store.create(user_id)
       expect(short_store.validate(token)).to be_nil
     end
 
@@ -124,7 +124,7 @@ RSpec.describe SessionStore do
     let!(:token) { store.create(user_id, metadata) }
 
     it 'removes the session for the given token' do
-      expect(store.all_sessions[token]).not.to be_nil
+      expect(store.all_sessions[token]).not_to be_nil
       store.destroy(token)
       expect(store.all_sessions[token]).to be_nil
     end
